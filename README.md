@@ -1,5 +1,3 @@
-Created by John Diego at https://github.com/jadiego
-
 # uwrouting
 Uwrouting is a web extension which adds custom keyboard shortcuts in UW Connect for faster routing.
 
