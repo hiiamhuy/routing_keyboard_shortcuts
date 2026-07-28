@@ -27,11 +27,33 @@ For example, to route a REQ to the Reported Spam AG, press: `~ + r`. And then pr
 - `~ enter`: Clicks the update button.
 
 ## Commands
-See the full [list](./documentation/combo.md) of commands.
+See the full [list](./documentation/combo.md) of commands, or the extension's Options page after installing.
+
+Note that the navigation shortcuts are defined in [src/content.js](./src/content.js) rather than the combo table, so they are not in that generated list: `` ` enter`` updates the request, `` ` right`` opens the next request from the nav page, and `` ` space`` returns to the home page.
 
 ## Development setup
 
-1. clone this repository.
+1. Clone this repository.
 2. Have [node](https://nodejs.org/en/download/) installed.
 3. In a bash shell within the directory of the repo, type `npm install`
-4. type `npm start` to start webpack.
+4. Type `npm start` to start webpack in watch mode, or `npm run build` for a production build.
+
+Webpack compiles `src/` into `uwrouting/content.bundle.js` and `uwrouting/background.bundle.js`, which is the folder you load as an unpacked extension. The built bundles are committed so the extension can be installed straight from a clone without running a build.
+
+### Layout
+
+| Path | Purpose |
+|------|---------|
+| [src/content.js](./src/content.js) | Content script: binds every shortcut on the request and nav pages |
+| [src/background.js](./src/background.js) | Shows the page action on `service-now.com` |
+| [src/combos.js](./src/combos.js) | The shortcut table — add or change shortcuts here |
+| [src/actions.js](./src/actions.js) | Writes the CI/AG/sector/template form fields |
+| [src/utils.js](./src/utils.js) | Page detection helpers |
+| [src/constants/](./src/constants/) | CI, AG, template, and CSS selector tables |
+| [tools/build-docs.mjs](./tools/build-docs.mjs) | Regenerates the cheatsheet from the combo table |
+
+### Adding a shortcut
+
+Add an entry to [src/combos.js](./src/combos.js), reusing the CI/AG entries in `src/constants/`, then run `npm run build`.
+
+Each entry's `description` is not read at runtime — it exists purely to generate the cheatsheet. `npm run build` runs webpack and then `npm run docs`, which rewrites both [documentation/combo.md](./documentation/combo.md) and `uwrouting/options.html` from the combo table, so the docs cannot drift from the shortcuts. Never edit `options.html` by hand; it is generated.

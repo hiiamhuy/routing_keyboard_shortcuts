@@ -1,0 +1,6 @@
+node_modules/
+npm-debug.log*
+
+# Emitted alongside the bundles by development builds; the bundles themselves
+# stay tracked so the extension can be loaded straight from a clone.
+uwrouting/*.bundle.js.map

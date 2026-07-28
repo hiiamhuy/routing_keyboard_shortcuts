@@ -1,0 +1,21 @@
+{
+  "name": "uwrouting",
+  "version": "1.3.2",
+  "description": "A web extension which adds custom keyboard shortcuts in UW Connect for faster routing.",
+  "private": true,
+  "license": "GPL-3.0",
+  "type": "module",
+  "scripts": {
+    "build": "webpack --mode production && npm run docs",
+    "docs": "node tools/build-docs.mjs",
+    "start": "webpack --mode development --watch",
+    "watch": "webpack --mode development --watch"
+  },
+  "dependencies": {
+    "combokeys": "3.0.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.101.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
