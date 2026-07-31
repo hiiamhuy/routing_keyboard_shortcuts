@@ -1,7 +1,7 @@
 import Combokeys from 'combokeys'
 import selectors from './constants/selectors.js'
 import { combos, mainkey, combokey } from './combos.js'
-import { atNavPage, atTaskPage, queryIframe } from './utils.js'
+import { atTaskPage } from './utils.js'
 
 const ERROR_STYLE = 'background: #00BFFF; color: white'
 
@@ -9,73 +9,42 @@ function warn (message) {
   console.log(`%c${message}`, ERROR_STYLE)
 }
 
-// Routing shortcuts only make sense on a request page.
-function bindRouteCombos (combokeys) {
-  combos.forEach(entry => {
-    combokeys.bind(entry.combo, () => {
-      if (atTaskPage()) {
-        entry.execute()
-      } else {
-        warn('error: cant route, not at a req page')
-      }
-    })
-  })
-}
+// UW Connect splits a request across frames, and the split differs between the
+// classic nav page and the Polaris shell. Rather than have one frame reach
+// across into another, the script is injected into every frame and each one
+// binds to its own document, so a shortcut works whichever frame holds focus.
+const combokeys = new Combokeys(document.documentElement)
 
-function bindNextRequest (combokeys, doc) {
-  combokeys.bind(`${mainkey}${combokey}right`, () => {
+combos.forEach(entry => {
+  combokeys.bind(entry.combo, () => {
     if (atTaskPage()) {
-      warn('error: cant go to next req, not at the nav page.')
-      return
+      entry.execute()
+    } else {
+      warn('error: cant route, not at a req page')
     }
-    const link = doc.querySelector(selectors.navpage.nextreq)
-    if (link) link.click()
   })
-}
+})
 
-function bindUpdate (combokeys, doc) {
-  combokeys.bind(`${mainkey}${combokey}enter`, () => {
-    if (!atTaskPage()) {
-      warn('error: cant submit form, not at req page')
-      return
-    }
-    const button = doc.querySelector(selectors.taskpage.updatebutton)
-    if (button) button.click()
-  })
-}
+combokeys.bind(`${mainkey}${combokey}right`, () => {
+  const link = document.querySelector(selectors.navpage.nextreq)
+  if (link) link.click()
+  else warn('error: cant go to next req, no next req link in this frame')
+})
 
-function bindHome (combokeys, doc) {
-  combokeys.bind(`${mainkey}${combokey}space`, () => {
-    const link = doc.querySelector(selectors.navpage.homelink)
-    if (link) link.click()
-  })
-}
+combokeys.bind(`${mainkey}${combokey}enter`, () => {
+  const button = document.querySelector(selectors.taskpage.updatebutton)
+  if (button) button.click()
+  else warn('error: cant submit form, no update button in this frame')
+})
 
-const outer = new Combokeys(document.documentElement)
+combokeys.bind(`${mainkey}${combokey}space`, () => {
+  const link = document.querySelector(selectors.navpage.homelink)
+  if (link) link.click()
+})
 
-if (atNavPage()) {
-  // On the nav page the request form is inside an iframe. Bindings are attached
-  // to both documents so a shortcut works whichever one holds focus.
-  bindRouteCombos(outer)
-
-  const iframe = queryIframe()
-  if (iframe) {
-    iframe.onload = () => {
-      const inner = new Combokeys(iframe.contentDocument)
-      bindRouteCombos(inner)
-
-      bindNextRequest(inner, iframe.contentDocument)
-      bindNextRequest(outer, iframe.contentDocument)
-
-      bindUpdate(inner, iframe.contentDocument)
-      bindUpdate(outer, iframe.contentDocument)
-
-      bindHome(inner, document)
-      bindHome(outer, document)
-    }
-  }
-} else {
-  bindRouteCombos(outer)
-  bindNextRequest(outer, document)
-  bindUpdate(outer, document)
-}
+// One line per frame, so the console shows which frames the shortcuts are live
+// in. Without it a dead extension and a mistyped combo look identical.
+console.log(
+  `%cuwrouting: bound in frame ${location.pathname}`,
+  'background: #4b2e83; color: white'
+)

@@ -1,12 +1,19 @@
 import selectors from './constants/selectors.js'
-import { atNavPage } from './utils.js'
 
-// On the nav page the form lives inside an iframe; everywhere else it is in the
-// top-level document. Every write below goes through this.
+// The script runs in every frame, so usually the form is right here in this
+// one. When a shortcut fires from an outer frame instead, fall back to the
+// classic form iframe. Every write below goes through this.
 function activeDocument () {
-  return atNavPage()
-    ? document.querySelector(selectors.navpage.taskiframe).contentDocument
-    : document
+  if (document.querySelector(selectors.formfields.ci.hidden)) return document
+
+  const iframe = document.querySelector(selectors.navpage.taskiframe)
+  if (!iframe) return document
+  try {
+    return iframe.contentDocument || document
+  } catch (e) {
+    // Cross-origin iframe; nothing reachable from here.
+    return document
+  }
 }
 
 // ServiceNow only reacts to a field once it sees a bubbling change event, so
@@ -21,6 +28,16 @@ export function changeInput (ci, ag) {
   const ciDisplayed = doc.querySelector(selectors.formfields.ci.displayed)
   const agHidden = doc.querySelector(selectors.formfields.ag.hidden)
   const agDisplayed = doc.querySelector(selectors.formfields.ag.displayed)
+
+  // A missing field means the form is in some frame this one cannot see. Say so
+  // rather than throwing on a null.
+  if (!ciHidden || !ciDisplayed || !agHidden || !agDisplayed) {
+    console.log(
+      '%cerror: cant find the CI/AG fields from this frame',
+      'background: #00BFFF; color: white'
+    )
+    return
+  }
 
   ciHidden.value = ci.value
   ciDisplayed.value = ci.name

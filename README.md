@@ -22,9 +22,11 @@ Each CI and AG in Connect has a specific ID. This extension fills out the CI and
 
 To use the keyboard shortcuts, you must press a combination of atleast two keyboard buttons. **The keys have to be pressed precisely in order, and not together, but in sequence.**
 
-For example, to route a REQ to the Reported Spam AG, press: `~ + r`. And then press `~ enter`. 
-- `~ r`: Change CI = "No Configuration Item" and AG = "UW-IT Reported Spam".
-- `~ enter`: Clicks the update button.
+The leader key is the backtick `` ` `` (unshifted, below Esc), not the tilde `~`.
+
+For example, to route a REQ to the Reported Spam AG, press `` ` `` then `1` then `r`. And then press `` ` `` then `enter`.
+- `` ` 1 r``: Change CI = "No Configuration Item" and AG = "UW-IT Reported Spam".
+- `` ` enter``: Clicks the update button.
 
 ## Commands
 See the full [list](./documentation/combo.md) of commands, or the extension's Options page after installing.
