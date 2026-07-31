@@ -53,9 +53,47 @@ Webpack compiles `src/` into `uwrouting/content.bundle.js` and `uwrouting/backgr
 | [src/utils.js](./src/utils.js) | Page detection helpers |
 | [src/constants/](./src/constants/) | CI, AG, template, and CSS selector tables |
 | [tools/build-docs.mjs](./tools/build-docs.mjs) | Regenerates the cheatsheet from the combo table |
+| [tools/sync-constants.mjs](./tools/sync-constants.mjs) | Reconciles the CI/AG tables against a ServiceNow CSV export |
 
 ### Adding a shortcut
 
 Add an entry to [src/combos.js](./src/combos.js), reusing the CI/AG entries in `src/constants/`, then run `npm run build`.
 
 Each entry's `description` is not read at runtime — it exists purely to generate the cheatsheet. `npm run build` runs webpack and then `npm run docs`, which rewrites both [documentation/combo.md](./documentation/combo.md) and `uwrouting/options.html` from the combo table, so the docs cannot drift from the shortcuts. Never edit `options.html` by hand; it is generated.
+
+### Refreshing the CI/AG tables
+
+Group names and configuration items drift as UW-IT reorganises, so [src/constants/ci.js](./src/constants/ci.js) and [src/constants/ag.js](./src/constants/ag.js) need an occasional pass against ServiceNow.
+
+#### Exporting the CSV from ServiceNow
+
+`sys_id` is not offered in the list column picker, so the usual right-click → **Export → CSV** produces names with no sys_ids. Force the columns through the URL instead — while logged into UW Connect, paste this into the address bar and it downloads a CSV headed exactly `name,sys_id`:
+
+```
+https://<your-instance>/sys_user_group_list.do?CSV&sysparm_query=active=true&sysparm_fields=name,sys_id
+```
+
+`sysparm_fields` overrides the list layout entirely, which is what makes the sys_id column reachable.
+
+For configuration items, first confirm which table the CI field actually references: open any request, click the magnifier next to **Configuration Item**, and read the table out of the popup's URL (`…_list.do?sysparm_reference=…`). It is a narrower table than the `cmdb_ci` base, so exporting the right one turns thousands of rows into dozens and makes `--search` usable.
+
+```
+https://<your-instance>/cmdb_ci_service_list.do?CSV&sysparm_query=active=true&sysparm_fields=name,sys_id
+```
+
+Two things that bite:
+
+- **Row cap.** Instances set `glide.ui.export.limit`, commonly 10,000. Past that the export truncates silently — narrow `sysparm_query` rather than raising the cap.
+- **Export ACLs.** If `.do?CSV` returns a permission error or an HTML login page instead of a download, fall back to right-click header → **Export → XML**, which always includes `sys_id` regardless of list layout. The sync tool reads CSV only, so this needs a converter — see the note in [tools/sync-constants.mjs](./tools/sync-constants.mjs).
+
+#### Running the sync
+
+```sh
+npm run sync -- --ag groups.csv --ci items.csv          # report drift, write nothing
+npm run sync -- --ag groups.csv --search "network"      # find a sys_id to add
+npm run sync -- --ag groups.csv --add portblock=8cf4228a6f2a070030b1073aea3ee41c --write
+```
+
+Three assignment groups are known dead as of the 2026-07-31 sync — `msca` (` m), `google` (` 1 g) and `spam` (` 1 r) are all inactive in ServiceNow with no live successor. Those shortcuts still fire but route nowhere useful; the header comment in [src/constants/ag.js](./src/constants/ag.js) records the details. Repoint them once the current owners are known.
+
+The sys_id is the identity: entries are matched on `value` and only their `name` is refreshed, so the short keys that [src/combos.js](./src/combos.js) references are never renamed out from under it. An entry whose sys_id is absent from the export is reported but never deleted — a shortcut may still point at it, and a stale label beats a combo that throws. Runs are dry by default; add `--write` to apply, then `npm run docs` if any label changed.
