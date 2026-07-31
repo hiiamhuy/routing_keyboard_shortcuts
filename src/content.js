@@ -42,9 +42,15 @@ combokeys.bind(`${mainkey}${combokey}space`, () => {
   if (link) link.click()
 })
 
-// One line per frame, so the console shows which frames the shortcuts are live
-// in. Without it a dead extension and a mistyped combo look identical.
+// Proof of injection, for when a shortcut does nothing and the cause could be
+// anywhere. The content script runs in an isolated world, so a variable here is
+// invisible from the page console -- a data attribute is not. Checking
+// `document.documentElement.dataset.uwrouting` in any frame reports whether the
+// script reached it, and which build got there.
+const version = chrome.runtime.getManifest().version
+document.documentElement.dataset.uwrouting = version
+
 console.log(
-  `%cuwrouting: bound in frame ${location.pathname}`,
+  `%cuwrouting ${version}: bound in frame ${location.pathname}`,
   'background: #4b2e83; color: white'
 )
